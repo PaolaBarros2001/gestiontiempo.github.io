@@ -1,0 +1,139 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Gestión del Tiempo</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .total {
+            font-weight: bold;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h2>Evaluación de Gestión del Tiempo</h2>
+
+    <label for="nombre">Nombre del Usuario:</label>
+    <input type="text" id="nombre" placeholder="Ingresa tu nombre">
+    <br><br>
+
+    <table id="tabla-evaluacion">
+        <thead>
+            <tr>
+                <th>Pregunta</th>
+                <th>NO (0)</th>
+                <th>AV (1)</th>
+                <th>H (2)</th>
+                <th>SÍ (3)</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-body">
+        </tbody>
+    </table>
+    <br>
+    <p class="total">Total: <span id="total-score">0</span></p>
+    <br>
+    
+    <button onclick="descargarPDF()">Descargar como PDF</button>
+
+    <script>
+        const preguntas = [
+            "¿Tienes tus objetivos especificados por escrito?",
+            "¿Tienes identificadas las actividades críticas que condicionan tus resultados?",
+            "¿Estableces tus prioridades a diario?",
+            "¿Dedicas tiempo a diario para reflexionar sobre el largo plazo?",
+            "¿Estás organizado? (oficina, escritorio)",
+            "¿Programas tu tiempo en cada jornada?",
+            "¿Conoces la causa de tus problemas de tiempo?",
+            "¿Abordas las tareas por orden de importancia?",
+            "¿Consigues evitar las interrupciones?",
+            "¿Has aprendido a decir 'no'?",
+            "¿No contestas al teléfono cuando tienes visitas?",
+            "¿Has eliminado o acortado reuniones?",
+            "¿Respetas el tiempo ajeno?",
+            "¿Nunca dejas para luego cosas que podrías resolver ya?",
+            "¿Cumples tus plazos?",
+            "¿Delegas eficazmente?",
+            "¿Utilizas eficazmente a empleados y compañeros?",
+            "¿Aprovechas el tiempo de esperas y viajes?",
+            "¿Dedicas suficiente tiempo a desarrollar tu equipo?",
+            "¿Encuentras suficiente el tiempo que dedicas a tu familia, a tu desarrollo personal y a tu propio placer?"
+        ];
+        
+        let tablaBody = document.getElementById("tabla-body");
+        preguntas.forEach((pregunta, index) => {
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index + 1}. ${pregunta}</td>
+                <td><input type="radio" name="p${index}" value="0" onchange="calcularTotal()"></td>
+                <td><input type="radio" name="p${index}" value="1" onchange="calcularTotal()"></td>
+                <td><input type="radio" name="p${index}" value="2" onchange="calcularTotal()"></td>
+                <td><input type="radio" name="p${index}" value="3" onchange="calcularTotal()"></td>
+            `;
+            tablaBody.appendChild(row);
+        });
+
+        function calcularTotal() {
+            let total = 0;
+            document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                total += parseInt(input.value);
+            });
+            document.getElementById("total-score").textContent = total;
+        }
+
+        function descargarPDF() {
+            const { jsPDF } = window.jspdf;
+            let doc = new jsPDF();
+            let nombre = document.getElementById("nombre").value.trim();
+            let total = document.getElementById("total-score").textContent;
+
+            if (nombre === "") {
+                alert("Por favor, ingresa tu nombre antes de descargar el PDF.");
+                return;
+            }
+
+            doc.text("Evaluación de Gestión del Tiempo", 10, 10);
+            doc.text(`Nombre: ${nombre}`, 10, 20);
+            doc.text(`Puntaje Total: ${total}`, 10, 30);
+            
+            let data = [];
+            document.querySelectorAll("#tabla-evaluacion tbody tr").forEach(row => {
+                let rowData = [];
+                row.querySelectorAll("td").forEach((cell, i) => {
+                    if (i === 0) {
+                        rowData.push(cell.innerText);
+                    } else {
+                        let checked = cell.querySelector("input:checked");
+                        rowData.push(checked ? checked.value : "");
+                    }
+                });
+                data.push(rowData);
+            });
+            
+            doc.autoTable({
+                head: [["Pregunta", "NO (0)", "AV (1)", "H (2)", "SÍ (3)"]],
+                body: data,
+                startY: 40,
+                styles: { fontSize: 8, cellWidth: 'wrap' },
+                theme: 'grid'
+            });
+
+            doc.save(`Evaluacion_${nombre}.pdf`);
+        }
+    </script>
+</body>
+</html>
